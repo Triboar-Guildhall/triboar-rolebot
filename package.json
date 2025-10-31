@@ -1,0 +1,33 @@
+{
+  "name": "triboar-rolebot",
+  "version": "1.0.0",
+  "description": "Discord bot for managing Triboar Guildhall subscription roles",
+  "main": "src/bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/bot.js",
+    "dev": "nodemon src/bot.js",
+    "lint": "eslint src/**/*.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "subscription",
+    "roles"
+  ],
+  "author": "Triboar Guild",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.0",
+    "dotenv": "^16.4.5",
+    "axios": "^1.6.5",
+    "node-cron": "^3.0.3",
+    "pino": "^8.17.2",
+    "express": "^4.18.2",
+    "pino-http": "^8.6.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "eslint": "^8.56.0"
+  }
+}
