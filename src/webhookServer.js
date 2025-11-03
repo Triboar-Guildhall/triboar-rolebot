@@ -1,5 +1,6 @@
 import express from 'express';
 import { handleWebhook } from './bot.js';
+import { verifyWebhookAuth } from './middleware.js';
 import logger from './logger.js';
 
 const app = express();
@@ -8,8 +9,9 @@ app.use(express.json());
 /**
  * Webhook endpoint to receive events from backend
  * Backend calls: POST /webhooks/rolebot
+ * Requires: Authorization: Bearer <BACKEND_API_TOKEN> header
  */
-app.post('/webhooks/rolebot', async (req, res) => {
+app.post('/webhooks/rolebot', verifyWebhookAuth, async (req, res) => {
   try {
     const event = req.body;
 
