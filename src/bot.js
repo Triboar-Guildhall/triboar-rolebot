@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, ChannelType } from 'discord.js';
+import { Client, GatewayIntentBits, ChannelType, ActivityType } from 'discord.js';
 import cron from 'node-cron';
 import { config } from './config.js';
 import logger from './logger.js';
@@ -34,7 +34,7 @@ client.once('ready', async () => {
   syncService = new SyncService(roleService, backendService, dmService);
 
   // Set bot status
-  client.user.setActivity('subscriptions', { type: 'WATCHING' });
+  client.user.setActivity('subscriptions', { type: ActivityType.Watching });
 
   // Schedule daily sync at 11:59 PM
   logger.info(`Scheduling daily sync: ${config.schedule.dailySync}`);
@@ -53,7 +53,7 @@ client.once('ready', async () => {
  */
 client.on('messageCreate', async (message) => {
   // Only handle DMs
-  if (!message.isDMChannel()) return;
+  if (message.channel.type !== ChannelType.DM) return;
   if (message.author.bot) return;
 
   const content = message.content.trim().toUpperCase();
