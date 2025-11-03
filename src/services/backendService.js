@@ -17,12 +17,13 @@ export class BackendService {
 
   /**
    * Get all active subscribers from backend
-   * Returns: { userId, discordId, expiresAt, isActive }[]
+   * Returns: { discordId, stripeCustomerId, expiresAt }[]
    */
   async getActiveSubscribers() {
     try {
-      const response = await this.client.get('/api/admin/subscribers');
-      return response.data.subscribers || [];
+      const response = await this.client.get('/api/lists/subscribed');
+      logger.info({ count: response.data.list?.length || 0 }, 'Fetched active subscribers');
+      return response.data.list || [];
     } catch (err) {
       logger.error({ err }, 'Failed to get active subscribers from backend');
       return [];
@@ -31,12 +32,13 @@ export class BackendService {
 
   /**
    * Get users in grace period from backend
-   * Returns: { userId, discordId, gracePeriodEndsAt, dmEnabled }[]
+   * Returns: { discordId, stripeCustomerId, subscriptionExpiredAt, graceEndsAt }[]
    */
   async getGracePeriodUsers() {
     try {
-      const response = await this.client.get('/api/admin/grace-period');
-      return response.data.gracePeriodUsers || [];
+      const response = await this.client.get('/api/lists/grace');
+      logger.info({ count: response.data.list?.length || 0 }, 'Fetched grace period users');
+      return response.data.list || [];
     } catch (err) {
       logger.error({ err }, 'Failed to get grace period users from backend');
       return [];

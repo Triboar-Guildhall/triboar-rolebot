@@ -29,21 +29,18 @@ export class SyncService {
 
       // Sync grace period users
       for (const user of gracePeriodUsers) {
-        const daysRemaining = this.calculateDaysRemaining(user.gracePeriodEndsAt);
+        const daysRemaining = this.calculateDaysRemaining(user.graceEndsAt);
 
         if (daysRemaining > 0) {
           // Still in grace period - ensure role is present
           await this.roleService.addSubscribedRole(user.discordId);
 
-          // Send reminder DM if enabled
-          if (user.dmEnabled) {
-            await this.dmService.sendGracePeriodReminder(user.discordId, daysRemaining);
-          }
+          // Send reminder DM if enabled (always enabled for grace period users)
+          await this.dmService.sendGracePeriodReminder(user.discordId, daysRemaining);
         } else {
-          // Grace period expired - remove role and notify
+          // Grace period expired - remove role and notify (handled by backend daily sync)
           await this.roleService.removeSubscribedRole(user.discordId, 'Grace period expired');
           await this.dmService.sendSubscriptionExpiredNotification(user.discordId);
-          await this.backendService.expireGracePeriod(user.userId, user.discordId);
         }
       }
 
