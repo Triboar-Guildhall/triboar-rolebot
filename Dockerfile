@@ -1,22 +1,40 @@
-# Build stage
-FROM node:22-alpine AS builder
+# Base stage - common setup
+FROM node:22-alpine AS base
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Development stage - includes dev dependencies and hot-reload
+FROM base AS development
+
+# Install all dependencies (including dev dependencies)
+RUN npm install
+
+# Copy application code
+COPY . .
+
+# Expose webhook port
+EXPOSE 3001
+
+# Start with nodemon for hot-reload
+CMD ["npm", "run", "dev"]
+
+# Production dependencies stage - optimized layer caching
+FROM base AS production-deps
+
+# Install only production dependencies
 RUN npm ci --only=production
 
-# Runtime stage
-FROM node:22-alpine
+# Production stage - optimized final image
+FROM node:22-alpine AS production
 
 WORKDIR /app
 
-# Copy dependencies from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
+# Copy production dependencies
+COPY --from=production-deps /app/node_modules ./node_modules
+COPY --from=production-deps /app/package*.json ./
 
 # Copy application code
 COPY src ./src

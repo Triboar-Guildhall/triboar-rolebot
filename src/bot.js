@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, ChannelType, ActivityType } from 'discord.js';
+import { Client, GatewayIntentBits, Partials, ChannelType, ActivityType } from 'discord.js';
 import cron from 'node-cron';
 import { config } from './config.js';
 import logger from './logger.js';
@@ -15,6 +15,10 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent,
+  ],
+  partials: [
+    Partials.Channel, // Required to receive DMs
+    Partials.Message, // Required to receive DM messages
   ],
 });
 

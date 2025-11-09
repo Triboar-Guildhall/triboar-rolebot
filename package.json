@@ -7,7 +7,14 @@
   "scripts": {
     "start": "node src/bot.js",
     "dev": "nodemon src/bot.js",
-    "lint": "eslint src/**/*.js"
+    "lint": "eslint src/**/*.js",
+    "docker:dev": "docker-compose up",
+    "docker:dev:build": "docker-compose up --build",
+    "docker:dev:down": "docker-compose down",
+    "docker:dev:logs": "docker-compose logs -f rolebot",
+    "docker:dev:shell": "docker-compose exec rolebot sh",
+    "docker:prod:build": "docker build -t triboar-rolebot .",
+    "docker:prod:run": "docker run -d --name triboar-rolebot --env-file .env -p 3001:3001 --restart unless-stopped triboar-rolebot"
   },
   "keywords": [
     "discord",
