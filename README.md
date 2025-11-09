@@ -12,12 +12,34 @@ A Discord bot that automates subscription-based access control for the Triboar G
 - **DM Preferences** - Users can opt-in/opt-out of notifications by replying "START" or "STOP"
 - **Production Ready** - Docker support, health checks, structured logging, and authentication
 
+## Quick Start
+
+Get up and running in 3 steps:
+
+```bash
+# 1. Clone and configure
+git clone <repository-url>
+cd triboar-rolebot
+cp .env.example .env
+# Edit .env with your Discord tokens and API keys
+
+# 2. Start with Docker (no Node.js installation needed!)
+npm run docker:dev
+
+# 3. View logs and start developing!
+# Changes to src/ files automatically reload the bot
+```
+
+That's it! Continue reading for detailed setup and configuration.
+
 ## Prerequisites
 
-- Node.js 22.x or higher
+- Docker and Docker Compose
 - Discord Bot Token with required permissions
 - Access to Triboar backend API
 - Discord server with Guild ID and Role ID
+
+**Note:** You do NOT need Node.js installed locally - all development is done via Docker containers.
 
 ### Required Discord Bot Permissions
 
@@ -40,18 +62,18 @@ When creating your bot application on Discord Developer Portal, enable:
    cd triboar-rolebot
    ```
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**
+2. **Configure environment variables**
    ```bash
    cp .env.example .env
-   # Edit .env with your configuration
+   # Edit .env with your configuration (see Configuration section below)
    ```
 
-4. **Set up required environment variables** (see Configuration section below)
+3. **Start the bot with Docker**
+   ```bash
+   npm run docker:dev
+   ```
+
+That's it! Docker will handle installing dependencies and running the bot. No need to install Node.js locally.
 
 ## Configuration
 
@@ -86,44 +108,105 @@ When creating your bot application on Discord Developer Portal, enable:
 
 ## Development Setup
 
-### Local Development
+### Docker-First Development (Recommended)
 
-1. **Start the backend API** (in separate terminal)
+All development is done via Docker - no need to install Node.js locally!
+
+1. **Configure environment** (if not done during installation)
    ```bash
-   cd triboar-site/backend
-   npm run dev
+   cp .env.example .env
+   # Edit .env with your Discord tokens and backend API configuration
    ```
 
-2. **Set up ngrok for webhook testing** (in separate terminal)
+2. **Start the bot**
    ```bash
-   ngrok http 3000
-   # Note the HTTPS URL provided
+   npm run docker:dev
    ```
 
-3. **Configure webhook URL in your backend**
-   ```
-   Update your backend to send webhooks to: https://your-ngrok-url.ngrok.io/webhooks/rolebot
-   ```
+3. **The bot is now running!**
+   - Logs will stream to your terminal
+   - File changes in `src/` automatically trigger reload (via nodemon)
+   - Webhook server available at `http://localhost:3001`
 
-4. **Start the bot in development mode**
-   ```bash
-   npm run dev
-   ```
-
-The bot will automatically reload on file changes using nodemon.
-
-### Development Scripts
+### Development Commands
 
 ```bash
-# Start bot with hot-reload
-npm run dev
+# Start bot in development mode
+npm run docker:dev
 
-# Start bot (production mode)
-npm start
+# Start bot and rebuild container (use after package.json changes)
+npm run docker:dev:build
 
-# Run linter
-npm run lint
+# Stop the bot
+npm run docker:dev:down
+
+# View logs
+npm run docker:dev:logs
+
+# Access container shell (for debugging)
+npm run docker:dev:shell
+
+# Run linter (inside container)
+npm run docker:dev:shell
+# Then inside container: npm run lint
 ```
+
+### Making Code Changes
+
+1. Edit files in the `src/` directory
+2. Changes are automatically detected and the bot restarts
+3. View logs in your terminal to see the restart
+
+### Adding Dependencies
+
+If you add new packages to `package.json`:
+
+```bash
+# Stop and rebuild the container
+npm run docker:dev:down
+npm run docker:dev:build
+```
+
+### Development Workflow with Backend
+
+For full integration testing with the backend API:
+
+1. **Start the backend API** (ensure it's accessible)
+   - If running locally, update `BACKEND_API_URL` in `.env` to `http://host.docker.internal:3000`
+   - If running in Docker, ensure both are on the same network
+
+2. **Set up ngrok for webhook testing** (optional, for webhook testing)
+   ```bash
+   # In separate terminal
+   ngrok http 3001
+   # Update your backend to send webhooks to: https://your-ngrok-url/webhooks/rolebot
+   ```
+
+3. **Start the rolebot**
+   ```bash
+   npm run docker:dev
+   ```
+
+### Local Development (Without Docker)
+
+If you prefer to develop without Docker (not recommended):
+
+1. **Install Node.js 22.x or higher**
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start bot with hot-reload**
+   ```bash
+   npm run dev
+   ```
+
+4. **Run linter**
+   ```bash
+   npm run lint
+   ```
 
 ### Project Structure
 
@@ -140,17 +223,61 @@ triboar-rolebot/
 │       ├── dmService.js       # Direct message notifications
 │       ├── roleService.js     # Discord role management
 │       └── syncService.js     # Subscription synchronization logic
-├── Dockerfile                 # Multi-stage Docker build
-├── package.json              # Dependencies and scripts
-├── .env.example              # Environment variable template
-└── README.md                 # This file
+├── Dockerfile                 # Multi-stage build (dev + production targets)
+├── docker-compose.yml         # Docker Compose for development
+├── .dockerignore              # Docker ignore patterns
+├── package.json               # Dependencies and scripts
+├── .env.example               # Environment variable template
+└── README.md                  # This file
 ```
 
 ## Deployment
 
-### Docker Deployment
+### Docker Multi-Stage Build Architecture
 
-1. **Build the Docker image**
+The project uses a **single Dockerfile** with multiple build targets:
+
+- **`development`** target - Includes all dependencies and nodemon for hot-reload
+- **`production`** target - Optimized with production-only dependencies
+- **`production-deps`** target - Intermediate stage for efficient layer caching
+
+This approach:
+- ✅ Simplifies maintenance (one Dockerfile instead of two)
+- ✅ Ensures dev/prod parity
+- ✅ Optimizes production images (smaller, faster)
+- ✅ Works seamlessly with docker-compose and platforms like fly.io
+
+### Production Deployment with Docker
+
+The production target creates an optimized image with only production dependencies.
+
+#### Quick Start
+
+1. **Build and run using npm scripts**
+   ```bash
+   # Build production image
+   npm run docker:prod:build
+
+   # Run production container
+   npm run docker:prod:run
+   ```
+
+2. **Check container status**
+   ```bash
+   docker ps
+   curl http://localhost:3001/health
+   ```
+
+3. **View logs**
+   ```bash
+   docker logs -f triboar-rolebot
+   ```
+
+#### Manual Docker Commands
+
+If you prefer to use Docker commands directly:
+
+1. **Build the production image**
    ```bash
    docker build -t triboar-rolebot .
    ```
@@ -165,45 +292,194 @@ triboar-rolebot/
      triboar-rolebot
    ```
 
-3. **Check container health**
+3. **Stop and remove**
    ```bash
-   docker ps
-   curl http://localhost:3001/health
+   docker stop triboar-rolebot
+   docker rm triboar-rolebot
    ```
 
-4. **View logs**
-   ```bash
-   docker logs -f triboar-rolebot
-   ```
+### Production Deployment with Docker Compose
 
-### Docker Compose (Recommended)
-
-Create a `docker-compose.yml`:
+For production deployments, create a `docker-compose.prod.yml`:
 
 ```yaml
 version: '3.8'
 
 services:
   rolebot:
-    build: .
-    container_name: triboar-rolebot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: triboar-rolebot-prod
     restart: unless-stopped
     ports:
       - "3001:3001"
     env_file:
       - .env
+    environment:
+      - NODE_ENV=production
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 ```
 
-Run with:
+Deploy with:
 ```bash
-docker-compose up -d
+docker-compose -f docker-compose.prod.yml up -d
 ```
+
+### Updating Production Deployment
+
+To update the bot in production:
+
+```bash
+# Pull latest code
+git pull
+
+# Rebuild and restart
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# Or with manual commands
+docker stop triboar-rolebot
+docker rm triboar-rolebot
+npm run docker:prod:build
+npm run docker:prod:run
+```
+
+### Deployment to fly.io (Recommended)
+
+fly.io provides excellent support for Dockerized applications with automatic deployments.
+
+#### Initial Setup
+
+1. **Install the flyctl CLI**
+   ```bash
+   # macOS
+   brew install flyctl
+
+   # Linux
+   curl -L https://fly.io/install.sh | sh
+
+   # Windows
+   iwr https://fly.io/install.ps1 -useb | iex
+   ```
+
+2. **Authenticate with fly.io**
+   ```bash
+   flyctl auth login
+   ```
+
+3. **Initialize your app** (run from project root)
+   ```bash
+   flyctl launch
+   ```
+
+   This will:
+   - Detect your Dockerfile automatically
+   - Create a `fly.toml` configuration file
+   - Prompt you to choose a region and app name
+
+4. **Set environment secrets**
+   ```bash
+   flyctl secrets set DISCORD_BOT_TOKEN=your_token_here
+   flyctl secrets set DISCORD_GUILD_ID=your_guild_id
+   flyctl secrets set DISCORD_SUBSCRIBED_ROLE_ID=your_role_id
+   flyctl secrets set BACKEND_API_TOKEN=your_backend_token
+   flyctl secrets set BACKEND_API_URL=https://your-backend.com
+   flyctl secrets set CHECKOUT_URL=https://triboar.guild/checkout/
+   ```
+
+5. **Deploy**
+   ```bash
+   flyctl deploy
+   ```
+
+#### Example fly.toml Configuration
+
+After running `flyctl launch`, update your `fly.toml`:
+
+```toml
+app = "triboar-rolebot"
+primary_region = "sjc"  # or your preferred region
+
+[build]
+  # fly.io automatically uses the final stage (production) from Dockerfile
+
+[env]
+  PORT = "3001"
+  NODE_ENV = "production"
+  GRACE_PERIOD_DAYS = "7"
+  GRACE_PERIOD_DM_ENABLED = "true"
+  DAILY_SYNC_SCHEDULE = "59 23 * * *"
+  LOG_LEVEL = "info"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = false  # Keep bot running 24/7
+  auto_start_machines = false
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
+```
+
+#### Updating Your fly.io Deployment
+
+```bash
+# Deploy latest changes
+git pull
+flyctl deploy
+
+# View logs
+flyctl logs
+
+# SSH into the container
+flyctl ssh console
+
+# Check app status
+flyctl status
+
+# Scale resources if needed
+flyctl scale memory 512
+```
+
+#### Setting Up Webhooks with fly.io
+
+Your fly.io app URL will be: `https://your-app-name.fly.dev`
+
+Update your backend to send webhooks to:
+```
+https://your-app-name.fly.dev/webhooks/rolebot
+```
+
+Make sure to include the `Authorization: Bearer <BACKEND_API_TOKEN>` header.
+
+#### fly.io Benefits
+
+- ✅ Automatic HTTPS
+- ✅ Global CDN and edge network
+- ✅ Built-in health checks
+- ✅ Zero-downtime deployments
+- ✅ Automatic restarts on crashes
+- ✅ Easy secrets management
+- ✅ Free tier available (perfect for Discord bots)
 
 ## Architecture
 
@@ -338,10 +614,20 @@ Set `LOG_LEVEL` to `debug` or `trace` for more verbose output.
 ## Contributing
 
 1. Create a feature branch
-2. Make your changes
-3. Run linter: `npm run lint`
-4. Test thoroughly
+2. Make your changes (all development via Docker)
+3. Run linter:
+   ```bash
+   npm run docker:dev:shell
+   # Then inside container:
+   npm run lint
+   ```
+4. Test thoroughly with `npm run docker:dev`
 5. Submit a pull request
+
+For non-Docker development (if you have Node.js installed):
+```bash
+npm run lint
+```
 
 ## License
 

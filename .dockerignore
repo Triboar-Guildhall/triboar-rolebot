@@ -1,10 +1,31 @@
+# Dependencies
 node_modules
 npm-debug.log
+
+# Environment files
 .env
 .env.local
+.env.*.local
+
+# Git files
 .git
 .gitignore
-README.md
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Logs
 *.log
-.eslintrc.json
+logs
+
+# Development files
+.vscode
+.idea
+
+# Docker files (don't copy into container)
+docker-compose.yml
+.dockerignore
+
+# Documentation (keep README.md for container reference)
+# README.md - removed from ignore so it's available in container
