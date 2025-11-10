@@ -10,6 +10,11 @@ export const config = {
     playerRoleId: process.env.DISCORD_PLAYER_ROLE_ID,
     rollDiceRoleId: process.env.DISCORD_ROLL_DICE_ROLE_ID,
     staffRoleId: process.env.DISCORD_STAFF_ROLE_ID,
+    characterSetupChannelId: process.env.DISCORD_CHARACTER_SETUP_CHANNEL_ID,
+    queueChannelId: process.env.DISCORD_QUEUE_CHANNEL_ID,
+    questBoardChannelId: process.env.DISCORD_QUEST_BOARD_CHANNEL_ID,
+    dailyJobChannelId: process.env.DISCORD_DAILY_JOB_CHANNEL_ID,
+    playerIntrosChannelId: process.env.DISCORD_PLAYER_INTROS_CHANNEL_ID,
   },
   backend: {
     apiUrl: process.env.BACKEND_API_URL || 'http://localhost:3000',

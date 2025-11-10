@@ -29,8 +29,18 @@ Staff-only command to approve new players and onboard them to the Triboar Guildh
 **What it does:**
 1. Adds the `@Player` role to the user (configured via `DISCORD_PLAYER_ROLE_ID`)
 2. Removes the `@Roll Dice` role if present (configured via `DISCORD_ROLL_DICE_ROLE_ID`)
-3. Posts a welcome message in the channel where the command was run
-4. Sends confirmation to the staff member who ran the command
+3. Posts a detailed welcome message with onboarding instructions in the channel where the command was run
+4. Sends the same welcome message as a DM to the user
+5. Sends confirmation to the staff member who ran the command
+
+**Welcome Message:**
+The command posts a comprehensive onboarding message that includes:
+- Dynamic greeting (different for new vs. existing players)
+- Character import instructions with Avrae
+- Quest board and party queue information
+- Daily job system for earning gold
+- Survival games introduction
+- Guild chat welcome
 
 **Usage:**
 ```
@@ -44,6 +54,10 @@ DISCORD_CLIENT_ID=your_discord_application_id_here
 DISCORD_PLAYER_ROLE_ID=your_player_role_id_here
 DISCORD_ROLL_DICE_ROLE_ID=your_roll_dice_role_id_here
 DISCORD_STAFF_ROLE_ID=your_staff_role_id_here
+DISCORD_CHARACTER_SETUP_CHANNEL_ID=your_character_setup_channel_id_here
+DISCORD_QUEUE_CHANNEL_ID=your_queue_channel_id_here
+DISCORD_QUEST_BOARD_CHANNEL_ID=your_quest_board_channel_id_here
+DISCORD_DAILY_JOB_CHANNEL_ID=your_daily_job_channel_id_here
 ```
 
 **Note:** The `DISCORD_CLIENT_ID` is your Discord Application ID (found in the Discord Developer Portal under "General Information"), not your bot token.
@@ -130,6 +144,10 @@ That's it! Docker will handle installing dependencies and running the bot. No ne
 | `DISCORD_PLAYER_ROLE_ID` | Role ID for approved players (required for /approve-character) | - |
 | `DISCORD_ROLL_DICE_ROLE_ID` | Role ID to remove on approval (required for /approve-character) | - |
 | `DISCORD_STAFF_ROLE_ID` | Role ID for staff members (required for /approve-character) | - |
+| `DISCORD_CHARACTER_SETUP_CHANNEL_ID` | Channel ID for character setup instructions (required for /approve-character) | - |
+| `DISCORD_QUEUE_CHANNEL_ID` | Channel ID for party queue (required for /approve-character) | - |
+| `DISCORD_QUEST_BOARD_CHANNEL_ID` | Channel ID for quest board (required for /approve-character) | - |
+| `DISCORD_DAILY_JOB_CHANNEL_ID` | Channel ID for daily job system (required for /approve-character) | - |
 | `BACKEND_API_URL` | Base URL for backend API | `http://localhost:3000` |
 | `CHECKOUT_URL` | Subscription checkout page URL | `https://triboar.guild/checkout/` |
 | `GRACE_PERIOD_DAYS` | Number of days for grace period | `7` |
