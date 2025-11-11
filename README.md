@@ -168,6 +168,9 @@ That's it! Docker will handle installing dependencies and running the bot. No ne
 | `DISCORD_ROLL_DICE_ROLE_ID` | Role ID to remove on approval (required for /approve-character) | - |
 | `DISCORD_STAFF_ROLE_ID` | Role ID for staff members (required for /approve-character) | - |
 | `DISCORD_CHARACTER_SETUP_CHANNEL_ID` | Channel ID for character setup instructions (required for /approve-character) | - |
+| `DISCORD_CHARACTER_RULES_CHANNEL_ID` | Channel ID for character rules (used in subscription confirmation DM) | - |
+| `DISCORD_CHARACTER_ROLLS_CHANNEL_ID` | Channel ID for character rolls (used in subscription confirmation DM) | - |
+| `DISCORD_CHARACTER_HELP_CHANNEL_ID` | Channel ID for character help (used in subscription confirmation DM) | - |
 | `DISCORD_QUEUE_CHANNEL_ID` | Channel ID for party queue (required for /approve-character) | - |
 | `DISCORD_QUEST_BOARD_CHANNEL_ID` | Channel ID for quest board (required for /approve-character) | - |
 | `DISCORD_DAILY_JOB_CHANNEL_ID` | Channel ID for daily job system (required for /approve-character) | - |
