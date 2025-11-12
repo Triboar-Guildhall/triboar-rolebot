@@ -7,6 +7,7 @@ import { BackendService } from './services/backendService.js';
 import { DMService } from './services/dmService.js';
 import { SyncService } from './services/syncService.js';
 import webhookServer from './webhookServer.js';
+import { loadCommands, registerCommands, handleCommandInteraction } from './utils/commandHandler.js';
 
 // Initialize Discord client
 const client = new Client({
@@ -27,6 +28,7 @@ let roleService;
 let backendService;
 let dmService;
 let syncService;
+let commands;
 
 client.once('ready', async () => {
   logger.info(`✓ Bot logged in as ${client.user.tag}`);
@@ -36,6 +38,14 @@ client.once('ready', async () => {
   backendService = new BackendService();
   dmService = new DMService(client);
   syncService = new SyncService(roleService, backendService, dmService);
+
+  // Load and register slash commands
+  commands = await loadCommands();
+  if (process.env.DISCORD_CLIENT_ID) {
+    await registerCommands(commands);
+  } else {
+    logger.warn('DISCORD_CLIENT_ID not set - slash commands will not be registered');
+  }
 
   // Set bot status
   client.user.setActivity('subscriptions', { type: ActivityType.Watching });
@@ -92,6 +102,15 @@ client.on('guildMemberAdd', async (member) => {
   } catch (err) {
     logger.error({ err, memberId: member.user.id }, 'Error handling new member');
   }
+});
+
+/**
+ * Handle slash command interactions
+ */
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  await handleCommandInteraction(interaction, commands);
 });
 
 /**
