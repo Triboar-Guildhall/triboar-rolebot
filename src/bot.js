@@ -90,6 +90,57 @@ client.on('guildMemberAdd', async (member) => {
   try {
     logger.info({ memberId: member.user.id }, 'New member joined');
 
+    // Send welcome message to the welcome channel if configured
+    if (config.discord.welcomeChannelId) {
+      try {
+        const welcomeChannel = await client.channels.fetch(config.discord.welcomeChannelId);
+
+        const embed = {
+          color: 0xB8860B, // guild-gold
+          title: `Welcome to Triboar, ${member.user.username}!`,
+          description:
+            `Greetings, traveler! The town of Triboar welcomes you.\n\n` +
+            `**Not Yet a Guildhall Member?**\n` +
+            `Visit our website at ${config.website.url} for information on joining the Guildhall and gaining access to all our adventures.\n\n` +
+            `**Already Subscribed?**\n` +
+            `You should receive a private message confirmation shortly. If you don't see it, check your DM settings.\n\n` +
+            `**Questions?**\n` +
+            `Feel free to ping the <@&${config.discord.staffRoleId}> role and we'll be happy to assist you.\n\n` +
+            `*May your dice roll high and your blades stay sharp!*`,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Add image if configured
+        if (config.welcome.imageUrl) {
+          embed.image = { url: config.welcome.imageUrl };
+        }
+
+        // Get or create webhook for custom name and avatar
+        let webhook;
+        const webhooks = await welcomeChannel.fetchWebhooks();
+        webhook = webhooks.find(wh => wh.owner.id === client.user.id && wh.name === 'Welcome Bot');
+
+        if (!webhook) {
+          webhook = await welcomeChannel.createWebhook({
+            name: 'Welcome Bot',
+            reason: 'Webhook for welcome messages with custom display',
+          });
+          logger.info({ channelId: config.discord.welcomeChannelId }, 'Created welcome webhook');
+        }
+
+        await webhook.send({
+          content: `${member}`,
+          embeds: [embed],
+          username: 'Big Al, Sheriff of Triboar',
+          avatarURL: 'https://cdn.tupperbox.app/pfp/753294841227640955/9qT8Evo4yT45GBTx.webp',
+        });
+
+        logger.info({ memberId: member.user.id, channelId: config.discord.welcomeChannelId }, 'Sent welcome message via webhook');
+      } catch (err) {
+        logger.error({ err, memberId: member.user.id }, 'Failed to send welcome message');
+      }
+    }
+
     // Check if they're an active subscriber
     const activeSubscribers = await backendService.getActiveSubscribers();
     const isSubscriber = activeSubscribers.some(s => s.discordId === member.user.id);

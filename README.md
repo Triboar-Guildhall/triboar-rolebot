@@ -7,6 +7,7 @@ A Discord bot that automates subscription-based access control for the Triboar G
 - **Automatic Role Management** - Grants and revokes the `@Subscribed` role based on subscription status
 - **Grace Period System** - 7-day grace period with daily reminders for expired subscriptions
 - **Direct Message Notifications** - Rich embed messages for subscription status updates
+- **Welcome Messages** - Automatic welcome embeds posted in a public channel when members join
 - **Webhook Integration** - Real-time updates from backend payment system
 - **Daily Synchronization** - Automated daily sync at 11:59 PM to ensure accuracy
 - **DM Preferences** - Users can opt-in/opt-out of notifications by replying "START" or "STOP"
@@ -61,6 +62,28 @@ DISCORD_DAILY_JOB_CHANNEL_ID=your_daily_job_channel_id_here
 ```
 
 **Note:** The `DISCORD_CLIENT_ID` is your Discord Application ID (found in the Discord Developer Portal under "General Information"), not your bot token.
+
+## Welcome Messages
+
+When new members join the server, the bot automatically posts a welcome embed in the configured welcome channel.
+
+**Features:**
+- Welcomes new members to the server
+- Provides information about joining the Guildhall for non-subscribers
+- Reminds existing subscribers to check their DMs
+- Directs members to ping Guild Staff with questions
+- Optional header image for branding
+
+**Configuration:**
+Set these environment variables in your `.env` file:
+```env
+DISCORD_WELCOME_CHANNEL_ID=your_welcome_channel_id_here
+WEBSITE_URL=https://triboar.guild
+WELCOME_IMAGE_URL=https://your-image-url.com/banner.png
+DISCORD_STAFF_ROLE_ID=your_staff_role_id_here
+```
+
+**Note:** The welcome message feature is optional. If `DISCORD_WELCOME_CHANNEL_ID` is not configured, no welcome messages will be posted (subscription functionality will still work).
 
 ## Quick Start
 
@@ -145,10 +168,16 @@ That's it! Docker will handle installing dependencies and running the bot. No ne
 | `DISCORD_ROLL_DICE_ROLE_ID` | Role ID to remove on approval (required for /approve-character) | - |
 | `DISCORD_STAFF_ROLE_ID` | Role ID for staff members (required for /approve-character) | - |
 | `DISCORD_CHARACTER_SETUP_CHANNEL_ID` | Channel ID for character setup instructions (required for /approve-character) | - |
+| `DISCORD_CHARACTER_RULES_CHANNEL_ID` | Channel ID for character rules (used in subscription confirmation DM) | - |
+| `DISCORD_CHARACTER_ROLLS_CHANNEL_ID` | Channel ID for character rolls (used in subscription confirmation DM) | - |
+| `DISCORD_CHARACTER_HELP_CHANNEL_ID` | Channel ID for character help (used in subscription confirmation DM) | - |
 | `DISCORD_QUEUE_CHANNEL_ID` | Channel ID for party queue (required for /approve-character) | - |
 | `DISCORD_QUEST_BOARD_CHANNEL_ID` | Channel ID for quest board (required for /approve-character) | - |
 | `DISCORD_DAILY_JOB_CHANNEL_ID` | Channel ID for daily job system (required for /approve-character) | - |
+| `DISCORD_WELCOME_CHANNEL_ID` | Channel ID where welcome messages are posted when members join | - |
 | `BACKEND_API_URL` | Base URL for backend API | `http://localhost:3000` |
+| `WEBSITE_URL` | Main website URL for joining information | `https://triboar.guild` |
+| `WELCOME_IMAGE_URL` | Image URL for welcome embed header | - |
 | `CHECKOUT_URL` | Subscription checkout page URL | `https://triboar.guild/checkout/` |
 | `GRACE_PERIOD_DAYS` | Number of days for grace period | `7` |
 | `GRACE_PERIOD_DM_ENABLED` | Enable/disable grace period DMs | `true` |

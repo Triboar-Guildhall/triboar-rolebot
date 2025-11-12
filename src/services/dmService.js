@@ -144,23 +144,16 @@ export class DMService {
 
       const embed = {
         color: 0x2C3E50, // guild-blue
-        title: '🎉 Welcome to the Guildhall!',
-        description: `Your ${membershipName} membership is now active!`,
-        fields: [
-          {
-            name: 'You now have access to:',
-            value: '• All campaigns and adventures\n• Community channels\n• Events and seasonal content',
-            inline: false,
-          },
-          {
-            name: 'Next Steps',
-            value: 'Check out the #welcome channel for getting started guides and resources.',
-            inline: false,
-          },
-        ],
-        footer: {
-          text: 'Welcome, adventurer!',
+        author: {
+          name: 'Big Al, Sheriff of Triboar',
+          icon_url: 'https://cdn.tupperbox.app/pfp/753294841227640955/9qT8Evo4yT45GBTx.webp',
         },
+        title: '🐗 Welcome to the Triboar Guildhall! 🐗',
+        description:
+          `You now have access to character creation, your first step to making a mark in this world!\n\n` +
+          `Head to <#${config.discord.characterRulesChannelId}> to learn how to make a character, and then roll the dice in <#${config.discord.characterRollsChannelId}>. You already have access to that channel, so cast your first fateful dice!\n\n` +
+          `If you have questions about character creation or just want to talk to other players about builds, drop into <#${config.discord.characterHelpChannelId}> or ping the <@&${config.discord.staffRoleId}> role.\n\n` +
+          `*May your rolls be high and your blades stay sharp!*`,
       };
 
       await user.send({

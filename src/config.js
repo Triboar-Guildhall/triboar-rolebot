@@ -11,10 +11,14 @@ export const config = {
     rollDiceRoleId: process.env.DISCORD_ROLL_DICE_ROLE_ID,
     staffRoleId: process.env.DISCORD_STAFF_ROLE_ID,
     characterSetupChannelId: process.env.DISCORD_CHARACTER_SETUP_CHANNEL_ID,
+    characterRulesChannelId: process.env.DISCORD_CHARACTER_RULES_CHANNEL_ID,
+    characterRollsChannelId: process.env.DISCORD_CHARACTER_ROLLS_CHANNEL_ID,
+    characterHelpChannelId: process.env.DISCORD_CHARACTER_HELP_CHANNEL_ID,
     queueChannelId: process.env.DISCORD_QUEUE_CHANNEL_ID,
     questBoardChannelId: process.env.DISCORD_QUEST_BOARD_CHANNEL_ID,
     dailyJobChannelId: process.env.DISCORD_DAILY_JOB_CHANNEL_ID,
     playerIntrosChannelId: process.env.DISCORD_PLAYER_INTROS_CHANNEL_ID,
+    welcomeChannelId: process.env.DISCORD_WELCOME_CHANNEL_ID,
   },
   backend: {
     apiUrl: process.env.BACKEND_API_URL || 'http://localhost:3000',
@@ -22,6 +26,12 @@ export const config = {
   },
   checkout: {
     url: process.env.CHECKOUT_URL || 'https://triboar.guild/checkout/',
+  },
+  website: {
+    url: process.env.WEBSITE_URL || 'https://triboar.guild',
+  },
+  welcome: {
+    imageUrl: process.env.WELCOME_IMAGE_URL,
   },
   gracePeriod: {
     days: parseInt(process.env.GRACE_PERIOD_DAYS) || 7,
