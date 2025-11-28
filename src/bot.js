@@ -6,6 +6,8 @@ import { RoleService } from './services/roleService.js';
 import { BackendService } from './services/backendService.js';
 import { DMService } from './services/dmService.js';
 import { SyncService } from './services/syncService.js';
+import { ReactionRoleService } from './services/reactionRoleService.js';
+import { ButtonRoleService } from './services/buttonRoleService.js';
 import webhookServer from './webhookServer.js';
 import { loadCommands, registerCommands, handleCommandInteraction } from './utils/commandHandler.js';
 
@@ -16,10 +18,12 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
   ],
   partials: [
     Partials.Channel, // Required to receive DMs
     Partials.Message, // Required to receive DM messages
+    Partials.Reaction, // Required for reaction events on old messages
   ],
 });
 
@@ -28,6 +32,8 @@ let roleService;
 let backendService;
 let dmService;
 let syncService;
+let reactionRoleService;
+let buttonRoleService;
 let commands;
 
 client.once('ready', async () => {
@@ -38,6 +44,12 @@ client.once('ready', async () => {
   backendService = new BackendService();
   dmService = new DMService(client);
   syncService = new SyncService(roleService, backendService, dmService);
+  reactionRoleService = new ReactionRoleService(client);
+  buttonRoleService = new ButtonRoleService(client);
+
+  // Attach services to client so commands can access them
+  client.reactionRoleService = reactionRoleService;
+  client.buttonRoleService = buttonRoleService;
 
   // Load and register slash commands
   commands = await loadCommands();
@@ -159,9 +171,52 @@ client.on('guildMemberAdd', async (member) => {
  * Handle slash command interactions
  */
 client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
+  if (interaction.isChatInputCommand()) {
+    await handleCommandInteraction(interaction, commands);
+    return;
+  }
 
-  await handleCommandInteraction(interaction, commands);
+  // Handle button interactions for role assignment
+  if (interaction.isButton()) {
+    const customId = interaction.customId;
+
+    // Handle gender role buttons
+    if (customId.startsWith('gender_role_')) {
+      const roleId = customId.replace('gender_role_', '');
+      await buttonRoleService.handleGenderRoleButton(interaction, roleId);
+      return;
+    }
+
+    // Handle PM role buttons
+    if (customId.startsWith('pm_role_')) {
+      const roleId = customId.replace('pm_role_', '');
+      const allPMRoles = [
+        process.env.DISCORD_PM_OK_ROLE_ID,
+        process.env.DISCORD_PM_ASK_ROLE_ID,
+        process.env.DISCORD_PM_NO_ROLE_ID,
+      ].filter(id => id);
+      await buttonRoleService.handlePMRoleButton(interaction, roleId, allPMRoles);
+      return;
+    }
+  }
+});
+
+/**
+ * Handle reaction add for reaction roles
+ */
+client.on('messageReactionAdd', async (reaction, user) => {
+  if (reactionRoleService) {
+    await reactionRoleService.handleReactionAdd(reaction, user);
+  }
+});
+
+/**
+ * Handle reaction remove for reaction roles
+ */
+client.on('messageReactionRemove', async (reaction, user) => {
+  if (reactionRoleService) {
+    await reactionRoleService.handleReactionRemove(reaction, user);
+  }
 });
 
 /**
