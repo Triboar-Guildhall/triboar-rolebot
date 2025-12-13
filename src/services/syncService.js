@@ -69,32 +69,30 @@ export class SyncService {
 
   /**
    * Sync a single user when their subscription status changes
-   * Called when webhook receives payment
+   * Called when webhook receives payment - trusts the webhook data
    */
   async syncUserOnPayment(discordId) {
     try {
       logger.info({ discordId }, 'Syncing user on payment');
 
-      // Get user's subscription status from backend
-      const subscribers = await this.backendService.getActiveSubscribers();
-      const subscriber = subscribers.find(s => s.discordId === discordId);
+      // Trust the webhook - if backend says subscription.activated, proceed
+      // This avoids race conditions where the subscription isn't yet queryable
+      await this.roleService.addSubscribedRole(discordId);
+      await this.dmService.sendSubscriptionConfirmationDM(discordId);
 
-      if (subscriber) {
-        await this.roleService.addSubscribedRole(discordId);
-        await this.dmService.sendSubscriptionConfirmationDM(discordId);
-
-        // If user was in grace period, move them back to active
+      // If user was in grace period, move them back to active
+      try {
         const gracePeriodUsers = await this.backendService.getGracePeriodUsers();
-        if (gracePeriodUsers.some(u => u.discordId === discordId)) {
-          await this.backendService.removeFromGracePeriod(subscriber.userId, discordId);
+        const graceUser = gracePeriodUsers.find(u => u.discordId === discordId);
+        if (graceUser) {
+          await this.backendService.removeFromGracePeriod(graceUser.userId, discordId);
         }
-
-        logger.info({ discordId }, 'User synced on payment');
-        return true;
-      } else {
-        logger.warn({ discordId }, 'Payment received but user not found in active subscribers');
-        return false;
+      } catch (err) {
+        logger.warn({ err, discordId }, 'Failed to check/remove grace period');
       }
+
+      logger.info({ discordId }, 'User synced on payment');
+      return true;
 
     } catch (err) {
       logger.error({ err, discordId }, 'Failed to sync user on payment');
