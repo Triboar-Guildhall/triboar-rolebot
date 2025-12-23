@@ -7,6 +7,7 @@ import { BackendService } from './services/backendService.js';
 import { DMService } from './services/dmService.js';
 import { SyncService } from './services/syncService.js';
 import { ButtonRoleService } from './services/buttonRoleService.js';
+import { StarboardService } from './services/starboardService.js';
 import webhookServer from './webhookServer.js';
 import { loadCommands, registerCommands, handleCommandInteraction } from './utils/commandHandler.js';
 
@@ -17,10 +18,12 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
   ],
   partials: [
     Partials.Channel, // Required to receive DMs
     Partials.Message, // Required to receive DM messages
+    Partials.Reaction, // Required for starboard reactions on old messages
   ],
 });
 
@@ -30,6 +33,7 @@ let backendService;
 let dmService;
 let syncService;
 let buttonRoleService;
+let starboardService;
 let commands;
 
 client.once('ready', async () => {
@@ -41,6 +45,7 @@ client.once('ready', async () => {
   dmService = new DMService(client);
   syncService = new SyncService(roleService, backendService, dmService);
   buttonRoleService = new ButtonRoleService(client);
+  starboardService = new StarboardService(client);
 
   // Attach services to client so commands can access them
   client.buttonRoleService = buttonRoleService;
@@ -206,6 +211,26 @@ client.on('interactionCreate', async (interaction) => {
       await buttonRoleService.handleRegionRoleButton(interaction, roleId);
       return;
     }
+  }
+});
+
+/**
+ * Handle star reactions for starboard
+ */
+client.on('messageReactionAdd', async (reaction, user) => {
+  if (user.bot) return;
+  if (starboardService) {
+    await starboardService.handleStarAdd(reaction, user);
+  }
+});
+
+/**
+ * Handle star reaction removal for starboard
+ */
+client.on('messageReactionRemove', async (reaction, user) => {
+  if (user.bot) return;
+  if (starboardService) {
+    await starboardService.handleStarRemove(reaction, user);
   }
 });
 

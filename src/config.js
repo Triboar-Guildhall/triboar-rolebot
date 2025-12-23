@@ -49,6 +49,10 @@ export const config = {
     days: parseInt(process.env.GRACE_PERIOD_DAYS) || 7,
     dmEnabled: process.env.GRACE_PERIOD_DM_ENABLED !== 'false',
   },
+  starboard: {
+    channelId: process.env.STARBOARD_CHANNEL_ID,
+    threshold: parseInt(process.env.STARBOARD_THRESHOLD) || 1,
+  },
   schedule: {
     dailySync: process.env.DAILY_SYNC_SCHEDULE || '59 23 * * *', // 11:59 PM daily
   },
