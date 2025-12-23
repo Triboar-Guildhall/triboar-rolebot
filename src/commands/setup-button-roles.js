@@ -13,7 +13,9 @@ export const data = new SlashCommandBuilder()
       .addChoices(
         { name: 'Gender/Pronoun Roles', value: 'gender' },
         { name: 'PM/DM Preferences', value: 'pm' },
-        { name: 'Both (Gender + PM)', value: 'both' }
+        { name: 'Interest Notifications', value: 'interests' },
+        { name: 'Geographic Region', value: 'region' },
+        { name: 'All Role Types', value: 'all' }
       ))
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
 
@@ -64,8 +66,25 @@ export async function execute(interaction) {
       { label: 'No PMs', roleId: process.env.DISCORD_PM_NO_ROLE_ID, style: ButtonStyle.Danger, emoji: '🚫' },
     ].filter(role => role.roleId); // Filter out any undefined roles
 
+    // Define interest/notification roles
+    const interestRoles = [
+      { label: 'Survivalist', roleId: process.env.DISCORD_SURVIVALIST_ROLE_ID, style: ButtonStyle.Success, emoji: '🏕️' },
+      { label: 'Crafter', roleId: process.env.DISCORD_CRAFTER_ROLE_ID, style: ButtonStyle.Primary, emoji: '🛠️' },
+      { label: 'Quest Seeker', roleId: process.env.DISCORD_QUEST_SEEKER_ROLE_ID, style: ButtonStyle.Secondary, emoji: '⚔️' },
+    ].filter(role => role.roleId); // Filter out any undefined roles
+
+    // Define geographic region roles
+    const regionRoles = [
+      { label: 'Africa', roleId: process.env.DISCORD_REGION_AFRICA_ROLE_ID, style: ButtonStyle.Primary, emoji: '🌍' },
+      { label: 'Asia', roleId: process.env.DISCORD_REGION_ASIA_ROLE_ID, style: ButtonStyle.Primary, emoji: '🌏' },
+      { label: 'Europe', roleId: process.env.DISCORD_REGION_EUROPE_ROLE_ID, style: ButtonStyle.Primary, emoji: '🌍' },
+      { label: 'North America', roleId: process.env.DISCORD_REGION_NORTH_AMERICA_ROLE_ID, style: ButtonStyle.Primary, emoji: '🌎' },
+      { label: 'Oceania', roleId: process.env.DISCORD_REGION_OCEANIA_ROLE_ID, style: ButtonStyle.Primary, emoji: '🌏' },
+      { label: 'South America', roleId: process.env.DISCORD_REGION_SOUTH_AMERICA_ROLE_ID, style: ButtonStyle.Primary, emoji: '🌎' },
+    ].filter(role => role.roleId); // Filter out any undefined roles
+
     // Set up the requested type(s)
-    if (type === 'gender' || type === 'both') {
+    if (type === 'gender' || type === 'all') {
       if (genderRoles.length === 0) {
         await interaction.editReply({
           content: '❌ No gender roles configured. Please set up DISCORD_GENDER_*_ROLE_ID environment variables.',
@@ -79,7 +98,7 @@ export async function execute(interaction) {
       logger.info({ messageId: message.id, channelId: channel.id }, 'Set up gender roles via slash command');
     }
 
-    if (type === 'pm' || type === 'both') {
+    if (type === 'pm' || type === 'all') {
       if (pmRoles.length === 0) {
         await interaction.editReply({
           content: '❌ No PM preference roles configured. Please set up DISCORD_PM_*_ROLE_ID environment variables.',
@@ -91,6 +110,34 @@ export async function execute(interaction) {
       const message = await buttonRoleService.setupPMRoles(channel, pmRoles);
       messages.push(`PM preferences message: ${message.url}`);
       logger.info({ messageId: message.id, channelId: channel.id }, 'Set up PM roles via slash command');
+    }
+
+    if (type === 'interests' || type === 'all') {
+      if (interestRoles.length === 0) {
+        await interaction.editReply({
+          content: '❌ No interest roles configured. Please set up DISCORD_SURVIVALIST_ROLE_ID and DISCORD_CRAFTER_ROLE_ID environment variables.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const message = await buttonRoleService.setupInterestRoles(channel, interestRoles);
+      messages.push(`Interest notifications message: ${message.url}`);
+      logger.info({ messageId: message.id, channelId: channel.id }, 'Set up interest roles via slash command');
+    }
+
+    if (type === 'region' || type === 'all') {
+      if (regionRoles.length === 0) {
+        await interaction.editReply({
+          content: '❌ No region roles configured. Please set up DISCORD_REGION_*_ROLE_ID environment variables.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const message = await buttonRoleService.setupRegionRoles(channel, regionRoles);
+      messages.push(`Geographic region message: ${message.url}`);
+      logger.info({ messageId: message.id, channelId: channel.id }, 'Set up region roles via slash command');
     }
 
     await interaction.editReply({

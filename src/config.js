@@ -19,6 +19,18 @@ export const config = {
     dailyJobChannelId: process.env.DISCORD_DAILY_JOB_CHANNEL_ID,
     playerIntrosChannelId: process.env.DISCORD_PLAYER_INTROS_CHANNEL_ID,
     welcomeChannelId: process.env.DISCORD_WELCOME_CHANNEL_ID,
+    survivalChannelId: process.env.DISCORD_SURVIVAL_CHANNEL_ID,
+    // Interest notification roles
+    survivalistRoleId: process.env.DISCORD_SURVIVALIST_ROLE_ID,
+    crafterRoleId: process.env.DISCORD_CRAFTER_ROLE_ID,
+    questSeekerRoleId: process.env.DISCORD_QUEST_SEEKER_ROLE_ID,
+    // Region roles
+    regionAfricaRoleId: process.env.DISCORD_REGION_AFRICA_ROLE_ID,
+    regionAsiaRoleId: process.env.DISCORD_REGION_ASIA_ROLE_ID,
+    regionEuropeRoleId: process.env.DISCORD_REGION_EUROPE_ROLE_ID,
+    regionNorthAmericaRoleId: process.env.DISCORD_REGION_NORTH_AMERICA_ROLE_ID,
+    regionOceaniaRoleId: process.env.DISCORD_REGION_OCEANIA_ROLE_ID,
+    regionSouthAmericaRoleId: process.env.DISCORD_REGION_SOUTH_AMERICA_ROLE_ID,
   },
   backend: {
     apiUrl: process.env.BACKEND_API_URL || 'http://localhost:3000',

@@ -97,7 +97,7 @@ export async function execute(interaction) {
       `Every day you can work for gold by going to the <#${config.discord.dailyJobChannelId}> channel and using the !job alias to work in one of your skills. Higher rolls are rewarded higher earnings, so use your best skills!\n\n` +
 
       `**Try Your Hand at Survival**\n` +
-      `Hunt, fish, or forage once an hour for a chance to catch prized species that offer XP and gold rewards.\n\n`;
+      `Head to <#${config.discord.survivalChannelId}> to hunt, fish, or forage once an hour for a chance to catch prized species that offer XP and gold rewards.\n\n`;
 
     // Only show "Meet the Guild" for new players (those who didn't already have the Player role)
     if (!alreadyHadPlayerRole) {

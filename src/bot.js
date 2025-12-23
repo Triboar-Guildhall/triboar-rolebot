@@ -6,7 +6,6 @@ import { RoleService } from './services/roleService.js';
 import { BackendService } from './services/backendService.js';
 import { DMService } from './services/dmService.js';
 import { SyncService } from './services/syncService.js';
-import { ReactionRoleService } from './services/reactionRoleService.js';
 import { ButtonRoleService } from './services/buttonRoleService.js';
 import webhookServer from './webhookServer.js';
 import { loadCommands, registerCommands, handleCommandInteraction } from './utils/commandHandler.js';
@@ -18,12 +17,10 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions,
   ],
   partials: [
     Partials.Channel, // Required to receive DMs
     Partials.Message, // Required to receive DM messages
-    Partials.Reaction, // Required for reaction events on old messages
   ],
 });
 
@@ -32,7 +29,6 @@ let roleService;
 let backendService;
 let dmService;
 let syncService;
-let reactionRoleService;
 let buttonRoleService;
 let commands;
 
@@ -44,11 +40,9 @@ client.once('ready', async () => {
   backendService = new BackendService();
   dmService = new DMService(client);
   syncService = new SyncService(roleService, backendService, dmService);
-  reactionRoleService = new ReactionRoleService(client);
   buttonRoleService = new ButtonRoleService(client);
 
   // Attach services to client so commands can access them
-  client.reactionRoleService = reactionRoleService;
   client.buttonRoleService = buttonRoleService;
 
   // Load and register slash commands
@@ -198,24 +192,20 @@ client.on('interactionCreate', async (interaction) => {
       await buttonRoleService.handlePMRoleButton(interaction, roleId, allPMRoles);
       return;
     }
-  }
-});
 
-/**
- * Handle reaction add for reaction roles
- */
-client.on('messageReactionAdd', async (reaction, user) => {
-  if (reactionRoleService) {
-    await reactionRoleService.handleReactionAdd(reaction, user);
-  }
-});
+    // Handle interest/notification role buttons
+    if (customId.startsWith('interest_role_')) {
+      const roleId = customId.replace('interest_role_', '');
+      await buttonRoleService.handleInterestRoleButton(interaction, roleId);
+      return;
+    }
 
-/**
- * Handle reaction remove for reaction roles
- */
-client.on('messageReactionRemove', async (reaction, user) => {
-  if (reactionRoleService) {
-    await reactionRoleService.handleReactionRemove(reaction, user);
+    // Handle geographic region role buttons
+    if (customId.startsWith('region_role_')) {
+      const roleId = customId.replace('region_role_', '');
+      await buttonRoleService.handleRegionRoleButton(interaction, roleId);
+      return;
+    }
   }
 });
 
