@@ -217,6 +217,72 @@ client.on('interactionCreate', async (interaction) => {
   if (interaction.isModalSubmit()) {
     const customId = interaction.customId;
 
+    // Handle forum post creation modal
+    if (customId.startsWith('message_post_')) {
+      try {
+        await interaction.deferReply({ ephemeral: true });
+
+        // Parse forum channel ID from custom ID
+        // Format: message_post_{forumId}
+        const forumId = customId.replace('message_post_', '');
+
+        // Get the title and content from the modal
+        const title = interaction.fields.getTextInputValue('title');
+        const content = interaction.fields.getTextInputValue('content');
+
+        // Fetch the forum channel
+        const forum = await interaction.client.channels.fetch(forumId);
+
+        // Get or create webhook for custom name and avatar
+        let webhook;
+        const webhooks = await forum.fetchWebhooks();
+        webhook = webhooks.find(wh => wh.owner?.id === interaction.client.user.id && wh.name === 'Message Manager');
+
+        if (!webhook) {
+          webhook = await forum.createWebhook({
+            name: 'Message Manager',
+            reason: 'Webhook for managed messages with custom display',
+          });
+          logger.info({ forumId }, 'Created Message Manager webhook');
+        }
+
+        // Create forum post via webhook
+        // Webhooks can create forum posts by specifying threadName
+        const sentMessage = await webhook.send({
+          content,
+          username: 'Big Al, Sheriff of Triboar',
+          avatarURL: 'https://cdn.tupperbox.app/pfp/753294841227640955/9qT8Evo4yT45GBTx.webp',
+          threadName: title,
+        });
+
+        logger.info({
+          userId: interaction.user.id,
+          forumId,
+          threadId: sentMessage.channelId,
+          messageId: sentMessage.id,
+        }, 'Created forum post via webhook');
+
+        const postUrl = `https://discord.com/channels/${interaction.guild.id}/${sentMessage.channelId}`;
+        const messageUrl = `https://discord.com/channels/${interaction.guild.id}/${sentMessage.channelId}/${sentMessage.id}`;
+        await interaction.editReply({
+          content: `Forum post created successfully!\n\n**Post link:** ${postUrl}\n**First message link:** ${messageUrl}\n\nSave these links to edit or delete later.`,
+        });
+      } catch (err) {
+        logger.error({ err }, 'Error handling message post modal');
+        if (interaction.deferred) {
+          await interaction.editReply({
+            content: 'An error occurred while creating the forum post. Please try again.',
+          });
+        } else {
+          await interaction.reply({
+            content: 'An error occurred while creating the forum post. Please try again.',
+            ephemeral: true,
+          });
+        }
+      }
+      return;
+    }
+
     // Handle message send modal
     if (customId.startsWith('message_send_')) {
       try {
@@ -229,15 +295,44 @@ client.on('interactionCreate', async (interaction) => {
         // Get the content from the modal
         const content = interaction.fields.getTextInputValue('content');
 
-        // Fetch the channel and send
+        // Fetch the channel
         const channel = await interaction.client.channels.fetch(channelId);
-        const sentMessage = await channel.send({ content });
+
+        // For threads (including forum posts), we need to use the parent channel's webhook
+        let webhookChannel = channel;
+        let threadId = null;
+
+        if (channel.isThread()) {
+          webhookChannel = await interaction.client.channels.fetch(channel.parentId);
+          threadId = channel.id;
+        }
+
+        // Get or create webhook for custom name and avatar
+        let webhook;
+        const webhooks = await webhookChannel.fetchWebhooks();
+        webhook = webhooks.find(wh => wh.owner?.id === interaction.client.user.id && wh.name === 'Message Manager');
+
+        if (!webhook) {
+          webhook = await webhookChannel.createWebhook({
+            name: 'Message Manager',
+            reason: 'Webhook for managed messages with custom display',
+          });
+          logger.info({ channelId: webhookChannel.id }, 'Created Message Manager webhook');
+        }
+
+        // Send via webhook with Big Al identity
+        const sentMessage = await webhook.send({
+          content,
+          username: 'Big Al, Sheriff of Triboar',
+          avatarURL: 'https://cdn.tupperbox.app/pfp/753294841227640955/9qT8Evo4yT45GBTx.webp',
+          threadId,
+        });
 
         logger.info({
           userId: interaction.user.id,
           channelId,
           messageId: sentMessage.id,
-        }, 'Sent managed message via modal');
+        }, 'Sent managed message via webhook');
 
         const messageUrl = `https://discord.com/channels/${interaction.guild.id}/${channelId}/${sentMessage.id}`;
         await interaction.editReply({
@@ -277,8 +372,27 @@ client.on('interactionCreate', async (interaction) => {
         const channel = await interaction.client.channels.fetch(channelId);
         const message = await channel.messages.fetch(messageId);
 
-        // Edit the message
-        await message.edit({ content: newContent });
+        // Check if this is a webhook message
+        if (message.webhookId) {
+          // For threads, webhook is on parent channel
+          let webhookChannel = channel;
+          if (channel.isThread()) {
+            webhookChannel = await interaction.client.channels.fetch(channel.parentId);
+          }
+
+          // Find the webhook and edit via webhook
+          const webhooks = await webhookChannel.fetchWebhooks();
+          const webhook = webhooks.find(wh => wh.id === message.webhookId);
+
+          if (webhook) {
+            await webhook.editMessage(messageId, { content: newContent });
+          } else {
+            throw new Error('Could not find the webhook for this message');
+          }
+        } else {
+          // Regular bot message - edit directly
+          await message.edit({ content: newContent });
+        }
 
         logger.info({
           userId: interaction.user.id,

@@ -96,8 +96,26 @@ export async function execute(interaction) {
       return;
     }
 
-    // Verify the bot is the author
-    if (message.author.id !== interaction.client.user.id) {
+    // Verify the bot can delete this message (either bot is author, or it's a webhook owned by the bot)
+    let canDelete = message.author.id === interaction.client.user.id;
+
+    if (!canDelete && message.webhookId) {
+      // Check if webhook is owned by our bot
+      // For threads, webhook is on parent channel
+      try {
+        let webhookChannel = channel;
+        if (channel.isThread()) {
+          webhookChannel = await interaction.client.channels.fetch(channel.parentId);
+        }
+        const webhooks = await webhookChannel.fetchWebhooks();
+        const webhook = webhooks.find(wh => wh.id === message.webhookId);
+        canDelete = webhook?.owner?.id === interaction.client.user.id;
+      } catch {
+        // Can't fetch webhooks, assume we can't delete
+      }
+    }
+
+    if (!canDelete) {
       await interaction.editReply({
         content: 'Cannot delete this message - the bot is not the author. You can only delete messages sent via `/message-send`.',
       });

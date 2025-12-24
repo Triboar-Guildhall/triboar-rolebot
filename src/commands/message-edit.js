@@ -105,8 +105,26 @@ export async function execute(interaction) {
       return;
     }
 
-    // Verify the bot is the author
-    if (message.author.id !== interaction.client.user.id) {
+    // Verify the bot can edit this message (either bot is author, or it's a webhook owned by the bot)
+    let canEdit = message.author.id === interaction.client.user.id;
+
+    if (!canEdit && message.webhookId) {
+      // Check if webhook is owned by our bot
+      // For threads, webhook is on parent channel
+      try {
+        let webhookChannel = channel;
+        if (channel.isThread()) {
+          webhookChannel = await interaction.client.channels.fetch(channel.parentId);
+        }
+        const webhooks = await webhookChannel.fetchWebhooks();
+        const webhook = webhooks.find(wh => wh.id === message.webhookId);
+        canEdit = webhook?.owner?.id === interaction.client.user.id;
+      } catch {
+        // Can't fetch webhooks, assume we can't edit
+      }
+    }
+
+    if (!canEdit) {
       await interaction.reply({
         content: 'Cannot edit this message - the bot is not the author. You can only edit messages sent via `/message-send`.',
         ephemeral: true,
