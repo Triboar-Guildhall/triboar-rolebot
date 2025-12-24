@@ -212,6 +212,100 @@ client.on('interactionCreate', async (interaction) => {
       return;
     }
   }
+
+  // Handle modal submissions for message editing
+  if (interaction.isModalSubmit()) {
+    const customId = interaction.customId;
+
+    // Handle message send modal
+    if (customId.startsWith('message_send_')) {
+      try {
+        await interaction.deferReply({ ephemeral: true });
+
+        // Parse channel ID from custom ID
+        // Format: message_send_{channelId}
+        const channelId = customId.replace('message_send_', '');
+
+        // Get the content from the modal
+        const content = interaction.fields.getTextInputValue('content');
+
+        // Fetch the channel and send
+        const channel = await interaction.client.channels.fetch(channelId);
+        const sentMessage = await channel.send({ content });
+
+        logger.info({
+          userId: interaction.user.id,
+          channelId,
+          messageId: sentMessage.id,
+        }, 'Sent managed message via modal');
+
+        const messageUrl = `https://discord.com/channels/${interaction.guild.id}/${channelId}/${sentMessage.id}`;
+        await interaction.editReply({
+          content: `Message sent successfully!\n\n**Message link:** ${messageUrl}\n\nSave this link to edit or delete the message later.`,
+        });
+      } catch (err) {
+        logger.error({ err }, 'Error handling message send modal');
+        if (interaction.deferred) {
+          await interaction.editReply({
+            content: 'An error occurred while sending the message. Please try again.',
+          });
+        } else {
+          await interaction.reply({
+            content: 'An error occurred while sending the message. Please try again.',
+            ephemeral: true,
+          });
+        }
+      }
+      return;
+    }
+
+    // Handle message edit modal
+    if (customId.startsWith('message_edit_')) {
+      try {
+        await interaction.deferReply({ ephemeral: true });
+
+        // Parse channel and message IDs from custom ID
+        // Format: message_edit_{channelId}_{messageId}
+        const parts = customId.split('_');
+        const channelId = parts[2];
+        const messageId = parts[3];
+
+        // Get the new content from the modal
+        const newContent = interaction.fields.getTextInputValue('content');
+
+        // Fetch the channel and message
+        const channel = await interaction.client.channels.fetch(channelId);
+        const message = await channel.messages.fetch(messageId);
+
+        // Edit the message
+        await message.edit({ content: newContent });
+
+        logger.info({
+          userId: interaction.user.id,
+          channelId,
+          messageId,
+        }, 'Edited managed message via modal');
+
+        const messageUrl = `https://discord.com/channels/${interaction.guild.id}/${channelId}/${messageId}`;
+        await interaction.editReply({
+          content: `Message edited successfully!\n\n**Message link:** ${messageUrl}`,
+        });
+      } catch (err) {
+        logger.error({ err }, 'Error handling message edit modal');
+        if (interaction.deferred) {
+          await interaction.editReply({
+            content: 'An error occurred while editing the message. Please try again.',
+          });
+        } else {
+          await interaction.reply({
+            content: 'An error occurred while editing the message. Please try again.',
+            ephemeral: true,
+          });
+        }
+      }
+      return;
+    }
+  }
 });
 
 /**
