@@ -38,8 +38,8 @@ export const data = new SlashCommandBuilder()
   .addStringOption(option =>
     option
       .setName('channel_url')
-      .setDescription('Channel/thread URL or ID (copy from Discord)')
-      .setRequired(true))
+      .setDescription('Channel/thread URL or ID (defaults to current channel)')
+      .setRequired(false))
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
 
 export async function execute(interaction) {
@@ -58,15 +58,19 @@ export async function execute(interaction) {
 
     const channelUrl = interaction.options.getString('channel_url');
 
-    // Parse the channel URL/ID
-    const channelId = parseChannelUrl(channelUrl);
-
-    if (!channelId) {
-      await interaction.reply({
-        content: 'Invalid channel URL or ID. Please provide a Discord channel URL or channel/thread ID.',
-        ephemeral: true,
-      });
-      return;
+    // Use current channel if no URL provided, otherwise parse the URL/ID
+    let channelId;
+    if (!channelUrl) {
+      channelId = interaction.channelId;
+    } else {
+      channelId = parseChannelUrl(channelUrl);
+      if (!channelId) {
+        await interaction.reply({
+          content: 'Invalid channel URL or ID. Please provide a Discord channel URL or channel/thread ID.',
+          ephemeral: true,
+        });
+        return;
+      }
     }
 
     // Verify the channel exists and is accessible
