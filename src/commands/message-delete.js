@@ -3,11 +3,10 @@ import { config } from '../config.js';
 import logger from '../logger.js';
 
 /**
- * Parse a Discord message URL or ID to extract channel and message IDs
+ * Parse a Discord message URL to extract channel and message IDs
  * URL format: https://discord.com/channels/{guildId}/{channelId}/{messageId}
  */
-function parseMessageUrl(url, providedChannelId = null) {
-  // Try to parse as URL first
+function parseMessageUrl(url) {
   const urlRegex = /discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)/;
   const urlMatch = url.match(urlRegex);
 
@@ -16,15 +15,6 @@ function parseMessageUrl(url, providedChannelId = null) {
       guildId: urlMatch[1],
       channelId: urlMatch[2],
       messageId: urlMatch[3],
-    };
-  }
-
-  // If not a URL, treat as message ID (requires channel to be provided)
-  if (/^\d+$/.test(url) && providedChannelId) {
-    return {
-      guildId: null,
-      channelId: providedChannelId,
-      messageId: url,
     };
   }
 
@@ -37,13 +27,8 @@ export const data = new SlashCommandBuilder()
   .addStringOption(option =>
     option
       .setName('message_url')
-      .setDescription('Discord message URL or message ID')
+      .setDescription('Discord message URL (right-click message → Copy Message Link)')
       .setRequired(true))
-  .addChannelOption(option =>
-    option
-      .setName('channel')
-      .setDescription('Channel where the message is (required if using message ID instead of URL)')
-      .setRequired(false))
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
 
 export async function execute(interaction) {
@@ -62,14 +47,13 @@ export async function execute(interaction) {
     }
 
     const messageUrl = interaction.options.getString('message_url');
-    const providedChannel = interaction.options.getChannel('channel');
 
-    // Parse the message URL/ID
-    const parsed = parseMessageUrl(messageUrl, providedChannel?.id);
+    // Parse the message URL
+    const parsed = parseMessageUrl(messageUrl);
 
     if (!parsed) {
       await interaction.editReply({
-        content: 'Invalid message URL or ID. Please provide a Discord message URL or a message ID with a channel.',
+        content: 'Invalid message URL. Please right-click the message and select "Copy Message Link".',
       });
       return;
     }
@@ -78,7 +62,8 @@ export async function execute(interaction) {
     let channel;
     try {
       channel = await interaction.client.channels.fetch(parsed.channelId);
-    } catch {
+    } catch (err) {
+      logger.error({ err, channelId: parsed.channelId }, 'Failed to fetch channel for delete');
       await interaction.editReply({
         content: 'Could not find the channel. Make sure the bot has access to it.',
       });
@@ -89,9 +74,10 @@ export async function execute(interaction) {
     let message;
     try {
       message = await channel.messages.fetch(parsed.messageId);
-    } catch {
+    } catch (err) {
+      logger.error({ err, channelId: parsed.channelId, messageId: parsed.messageId }, 'Failed to fetch message for delete');
       await interaction.editReply({
-        content: 'Could not find the message. Make sure the message ID/URL is correct.',
+        content: 'Could not find the message. Make sure the message URL is correct and the message still exists.',
       });
       return;
     }

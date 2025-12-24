@@ -16,6 +16,7 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
@@ -376,8 +377,10 @@ client.on('interactionCreate', async (interaction) => {
         if (message.webhookId) {
           // For threads, webhook is on parent channel
           let webhookChannel = channel;
+          let threadId = null;
           if (channel.isThread()) {
             webhookChannel = await interaction.client.channels.fetch(channel.parentId);
+            threadId = channel.id;
           }
 
           // Find the webhook and edit via webhook
@@ -385,7 +388,8 @@ client.on('interactionCreate', async (interaction) => {
           const webhook = webhooks.find(wh => wh.id === message.webhookId);
 
           if (webhook) {
-            await webhook.editMessage(messageId, { content: newContent });
+            // For thread messages, we need to pass threadId
+            await webhook.editMessage(messageId, { content: newContent, threadId });
           } else {
             throw new Error('Could not find the webhook for this message');
           }
